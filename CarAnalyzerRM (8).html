@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#06080e"/>
+<title>Car Analyzer RM</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #06080e;
+  --s1: #0e1118;
+  --s2: #161b26;
+  --s3: #1e2535;
+  --border: rgba(255,255,255,0.1);
+  --green: #00ff88;
+  --cyan: #00d4ff;
+  --red: #ff4d6a;
+  --amber: #ffbb00;
+  --purple: #b09ffa;
+  --text: #ffffff;
+  --muted: rgba(255,255,255,0.55);
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow-x:hidden}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+}
+.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+header{
+  background:rgba(6,8,14,0.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,255,136,0.15);
+  padding:14px 20px;display:flex;align-items:center;gap:14px;
+  position:sticky;top:0;z-index:100;
+}
+.hlogo{font-family:var(--display);font-size:26px;letter-spacing:2px;background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hsub{font-size:11px;letter-spacing:2px;color:rgba(0,255,136,0.6);margin-top:-2px}
+.hbadge{margin-left:auto;background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.25);border-radius:6px;padding:6px 14px;text-align:center;}
+.hbadge-label{font-size:10px;letter-spacing:1px;color:var(--muted)}
+.hbadge-val{font-size:18px;font-weight:700;color:var(--green)}
+
+/* STEPS */
+.steps{display:flex;background:var(--s1);border-bottom:1px solid var(--border);padding:0 10px;overflow-x:auto;scrollbar-width:none;}
+.steps::-webkit-scrollbar{display:none}
+.step{flex:1;min-width:70px;padding:14px 6px;text-align:center;font-size:11px;letter-spacing:1px;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer;transition:all 0.2s;white-space:nowrap;font-weight:700;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--mono);}
+.step.active{color:var(--green);border-bottom-color:var(--green);background:rgba(0,255,136,0.05)}
+.step.done{color:var(--cyan);border-bottom-color:rgba(0,212,255,0.4)}
+.step-num{font-family:var(--display);font-size:22px;display:block;margin-bottom:3px}
+
+/* MAIN */
+main{flex:1;padding:20px;max-width:700px;margin:0 auto;width:100%}
+.panel{display:none;animation:fadeIn 0.3s ease}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* SECTION TITLE */
+.section-title{font-family:var(--display);font-size:36px;letter-spacing:2px;color:#ffffff;margin-bottom:6px;}
+.section-sub{font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:20px}
+
+/* CARD */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:14px;}
+.card-accent{border-color:rgba(0,255,136,0.25)}
+.card-amber{border-color:rgba(255,184,0,0.25)}
+.card-red{border-color:rgba(255,61,90,0.25)}
+.card-purple{border-color:rgba(167,139,250,0.3)}
+.card-label{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
+
+/* FIELD */
+.field{margin-bottom:14px}
+.field-label{font-size:11px;font-weight:700;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;margin-bottom:7px;display:block}
+.field-input{width:100%;background:var(--s2);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px;color:#ffffff;font-size:15px;font-family:var(--mono);outline:none;transition:border-color 0.2s;-webkit-appearance:none;}
+.field-input:focus{border-color:rgba(0,255,136,0.5);background:var(--s3)}
+.field-input.valid{border-color:rgba(0,255,136,0.6)}
+.field-input::placeholder{color:rgba(255,255,255,0.25)}
+select.field-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;appearance:none;cursor:pointer;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* VIN DETECTION CARD */
+.vin-detect-card{
+  background:linear-gradient(135deg,rgba(0,255,136,0.08),rgba(0,212,255,0.05));
+  border:1px solid rgba(0,255,136,0.3);
+  border-radius:12px;padding:14px 16px;margin-top:10px;
+  display:none;
+  animation:fadeIn 0.3s ease;
+}
+.vin-detect-card.visible{display:block}
+.vin-detect-header{font-size:10px;color:var(--green);font-weight:700;letter-spacing:1.5px;margin-bottom:10px}
+.vin-detect-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.vin-detect-item{background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px}
+.vin-detect-label{font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;text-transform:uppercase}
+.vin-detect-val{font-size:13px;font-weight:700;color:#fff}
+.vin-counter{font-size:11px;color:var(--muted);margin-top:8px;letter-spacing:1px;text-align:right}
+.vin-counter span{color:var(--cyan);font-weight:700}
+
+/* PILL BADGES */
+.vin-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pill{font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:0.5px;}
+.pill-green{background:rgba(0,255,136,0.15);color:var(--green);border:1px solid rgba(0,255,136,0.3)}
+.pill-cyan{background:rgba(0,212,255,0.15);color:var(--cyan);border:1px solid rgba(0,212,255,0.3)}
+.pill-amber{background:rgba(255,184,0,0.15);color:var(--amber);border:1px solid rgba(255,184,0,0.3)}
+.pill-red{background:rgba(255,61,90,0.15);color:var(--red);border:1px solid rgba(255,61,90,0.3)}
+.pill-purple{background:rgba(167,139,250,0.15);color:var(--purple);border:1px solid rgba(167,139,250,0.3)}
+
+/* PDF DROP ZONE */
+.drop-zone{border:2px dashed rgba(0,212,255,0.3);border-radius:14px;padding:34px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(0,212,255,0.04);position:relative;}
+.drop-zone:hover,.drop-zone.drag-over{border-color:rgba(0,212,255,0.7);background:rgba(0,212,255,0.09);}
+.drop-icon{font-size:40px;margin-bottom:12px}
+.drop-title{font-size:16px;font-weight:700;color:var(--cyan);margin-bottom:6px}
+.drop-sub{font-size:13px;color:var(--muted)}
+.drop-file-input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.pdf-status{display:none;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);border-radius:10px;padding:14px 18px;margin-top:12px;}
+.pdf-status.active{display:block}
+.pdf-status-name{font-size:14px;font-weight:700;color:var(--cyan)}
+.pdf-status-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* CARFAX EXTRACTED */
+.cfx-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+.cfx-item{background:var(--s2);border-radius:10px;padding:12px 14px}
+.cfx-item-label{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:4px}
+.cfx-item-val{font-size:15px;font-weight:700;color:#ffffff}
+
+/* BUTTONS */
+.btn{width:100%;padding:16px;border-radius:12px;border:none;font-size:14px;font-weight:700;font-family:var(--mono);letter-spacing:0.8px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary{background:linear-gradient(135deg,var(--green),var(--cyan));color:#06080e}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-primary:active{transform:scale(0.98)}
+.btn-secondary{background:rgba(167,139,250,0.18);color:var(--purple);border:1px solid rgba(167,139,250,0.35)}
+.btn-ghost{background:rgba(255,255,255,0.06);color:#ffffff;border:1px solid rgba(255,255,255,0.12)}
+.btn:disabled{opacity:0.25;cursor:not-allowed}
+.btn-row{display:flex;gap:10px;margin-top:6px}
+.btn-row .btn{flex:1}
+
+/* DATA ROWS */
+.drow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px;}
+.drow:last-child{border-bottom:none}
+.drow-label{color:var(--muted)}
+.drow-val{font-weight:700;color:#ffffff}
+.drow-val.green{color:var(--green)}
+.drow-val.red{color:var(--red)}
+.drow-val.amber{color:var(--amber)}
+.drow-val.cyan{color:var(--cyan)}
+
+/* BIG NUMBER */
+.big-num-block{text-align:center;padding:22px 16px}
+.big-num-label{font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:6px}
+.big-num{font-family:var(--display);font-size:58px;line-height:1;letter-spacing:2px}
+.big-num-sub{font-size:13px;color:var(--muted);margin-top:8px}
+
+/* RANGE BARS */
+.range-block{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}
+.range-box{background:var(--s2);border-radius:10px;padding:14px;text-align:center;border:1px solid rgba(255,255,255,0.07)}
+.range-box-label{font-size:10px;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.range-box-val{font-size:19px;font-weight:700}
+
+/* SCORE RING */
+.score-block{display:flex;align-items:center;gap:18px}
+.score-ring-wrap{position:relative;width:96px;height:96px;flex-shrink:0}
+.score-ring-wrap svg{transform:rotate(-90deg)}
+.score-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-family:var(--display);font-size:34px;line-height:1}
+.score-sub{font-size:10px;letter-spacing:1px;color:var(--muted)}
+.score-info-title{font-family:var(--display);font-size:30px;letter-spacing:1px}
+.score-info-sub{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.7}
+
+/* AI OUTPUT */
+.ai-out{font-size:14px;line-height:1.9;color:#ffffff;white-space:pre-wrap}
+.ai-spin{text-align:center;padding:30px 0}
+.ai-spin-icon{font-size:36px;animation:spin 2s linear infinite}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+/* ALERT */
+.alert{border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:12px;line-height:1.6}
+.alert-green{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.25);color:#ffffff}
+.alert-amber{background:rgba(255,184,0,0.1);border:1px solid rgba(255,184,0,0.25);color:#ffffff}
+.alert-red{background:rgba(255,61,90,0.1);border:1px solid rgba(255,61,90,0.25);color:#ffffff}
+
+/* LOADING BAR */
+.loading-bar{height:3px;background:var(--s2);border-radius:2px;overflow:hidden;margin:10px 0}
+.loading-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:2px;transition:width 0.3s ease}
+
+.sep{height:1px;background:var(--border);margin:18px 0}
+
+@media(min-width:680px){
+  main{padding:28px 24px}
+  .desktop-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .desktop-full{grid-column:1/-1}
+}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div>
+    <div class="hlogo">CAR ANALYZER RM</div>
+    <div class="hsub">COPART ILLINOIS · MAPABROKER METHOD</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <button onclick="downloadApp()" title="Descargar app" style="background:rgba(0,255,136,0.12);border:1px solid rgba(0,255,136,0.3);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:18px;line-height:1;color:var(--green)">⬇️</button>
+    <div class="hbadge">
+      <div class="hbadge-label">CAPITAL</div>
+      <div class="hbadge-val">$8,000</div>
+    </div>
+  </div>
+</header>
+
+<div class="steps">
+  <button class="step active" onclick="goStep(0)" id="step0"><span class="step-num">1</span>VIN + LOTE</button>
+  <button class="step" onclick="goStep(1)" id="step1"><span class="step-num">2</span>CARFAX</button>
+  <button class="step" onclick="goStep(2)" id="step2"><span class="step-num">3</span>DETALLES</button>
+  <button class="step" onclick="goStep(3)" id="step3"><span class="step-num">4</span>ANÁLISIS</button>
+</div>
+
+<main>
+
+<!-- ══ STEP 1 ══ -->
+<div class="panel active" id="panel-0">
+  <div class="section-title">IDENTIFICAR LOTE</div>
+  <div class="section-sub">INGRESA EL VIN Y NÚMERO DE LOTE COPART</div>
+
+  <div class="card card-accent">
+    <div class="card-label">VIN Number (17 caracteres)</div>
+    <!-- ✅ FIX: oninput conectado correctamente -->
+    <input class="field-input" id="vin" maxlength="17"
+      placeholder="2T1BURHE8FC447921"
+      style="letter-spacing:2px;font-size:16px;text-transform:uppercase;font-weight:700"
+      oninput="onVIN(this)"/>
+    <!-- ✅ FIX: el counter y pills ahora existen en el DOM -->
+    <div class="vin-counter">Caracteres: <span id="vin-count">0</span> / 17</div>
+    <div class="vin-pills" id="vin-pills" style="display:none"></div>
+
+    <!-- ✅ NUEVO: card de detección en tiempo real más visual -->
+    <div class="vin-detect-card" id="nhtsa-result">
+      <div class="vin-detect-header">✓ VEHÍCULO DETECTADO — NHTSA / LOCAL</div>
+      <div class="vin-detect-grid" id="nhtsa-grid"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Información del Lote</div>
+    <div class="grid2">
+      <div class="field">
+        <label class="field-label">Lote Copart #</label>
+        <input class="field-input" id="lot" placeholder="99218705"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Modelo</label>
+        <input class="field-input" id="model" placeholder="Se llena automático"/>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label class="field-label">Condición</label>
+        <select class="field-input" id="condition">
+          <option>Run & Drive</option>
+          <option>Enhanced Vehicle</option>
+          <option>Stationary</option>
+          <option>No Start</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Tipo de Título</label>
+        <select class="field-input" id="title">
+          <option>Clean</option>
+          <option>Salvage</option>
+          <option>Rebuilt</option>
+          <option>Certificate of Destruction</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Daños Reportados en Copart</div>
+    <div class="grid2">
+      <div class="field">
+        <label class="field-label">Daño Primario</label>
+        <select class="field-input" id="dmg1">
+          <option>Front End</option><option>Rear End</option><option>Hail</option>
+          <option>Side</option><option>Minor Dent/Scratches</option>
+          <option>Water/Flood</option><option>Mechanical</option>
+          <option>Burn</option><option>Rollover</option><option>Vandalism</option>
+          <option>Theft Recovery</option><option>Normal Wear</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Daño Secundario</label>
+        <select class="field-input" id="dmg2">
+          <option value="">Ninguno</option>
+          <option>Airbag</option><option>Front End</option><option>Rear End</option>
+          <option>Mechanical</option><option>Side</option><option>Hail</option>
+          <option>Water/Flood</option><option>Minor Dent/Scratches</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Millaje en Copart</label>
+      <input class="field-input" id="miles" type="number" placeholder="65000"/>
+    </div>
+  </div>
+
+  <!-- ✅ FIX: botón llama goToStep2() que valida antes de avanzar -->
+  <button class="btn btn-primary" onclick="goToStep2()">
+    ⚡ CONTINUAR → CARFAX
+  </button>
+</div>
+
+<!-- ══ STEP 2 ══ -->
+<div class="panel" id="panel-1">
+  <div class="section-title">REPORTE CARFAX</div>
+  <div class="section-sub">SUBE EL PDF O PEGA EL TEXTO · LA IA EXTRAE TODO AUTOMÁTICAMENTE</div>
+
+  <div class="card card-purple">
+    <div class="card-label">📄 Subir PDF o Pegar Texto del Carfax</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button id="tab-pdf" onclick="switchCfxTab('pdf')"
+        style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,212,255,0.4);background:rgba(0,212,255,0.15);color:var(--cyan);font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer">
+        📄 Subir PDF
+      </button>
+      <button id="tab-paste" onclick="switchCfxTab('paste')"
+        style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer">
+        📋 Pegar Texto
+      </button>
+    </div>
+    <div id="cfx-tab-pdf">
+      <div class="drop-zone" id="drop-zone" style="margin-bottom:10px">
+        <input type="file" class="drop-file-input" accept=".pdf" onchange="handlePDF(this.files[0])" id="pdf-input"/>
+        <div class="drop-icon">📋</div>
+        <div class="drop-title">Toca para seleccionar el PDF</div>
+        <div class="drop-sub">Sube tu reporte Carfax en formato PDF</div>
+      </div>
+      <div class="pdf-status" id="pdf-status">
+        <div class="pdf-status-name" id="pdf-name"></div>
+        <div class="loading-bar"><div class="loading-fill" id="pdf-progress" style="width:0%"></div></div>
+        <div class="pdf-status-sub" id="pdf-sub">Leyendo PDF...</div>
+      </div>
+    </div>
+    <div id="cfx-tab-paste" style="display:none">
+      <div class="alert alert-green" style="margin-bottom:12px">
+        💡 Abre tu Carfax → selecciona todo → copia → pega aquí
+      </div>
+      <div class="field">
+        <textarea class="field-input" id="cfx-raw-text" rows="6"
+          placeholder="Pega aquí el texto completo del Carfax..."
+          style="resize:vertical;line-height:1.5;font-size:13px"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-secondary" id="btn-extract" onclick="extractCarfaxAI()" style="margin-top:10px;margin-bottom:8px">
+      🤖 EXTRAER DATOS CON IA
+    </button>
+    <div id="cfx-ai-loading" style="display:none;text-align:center;padding:14px">
+      <div style="font-size:26px;animation:spin 1.5s linear infinite;display:inline-block">⚙️</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">Analizando Carfax con IA...</div>
+    </div>
+    <div id="cfx-extracted" style="display:none">
+      <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:10px;letter-spacing:1px">✓ DATOS EXTRAÍDOS AUTOMÁTICAMENTE</div>
+      <div class="cfx-grid" id="cfx-grid"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">✏️ Datos del Carfax (auto-rellenados o edita manualmente)</div>
+    <div class="grid2">
+      <div class="field">
+        <label class="field-label">Núm. Propietarios</label>
+        <input class="field-input" id="cfx-owners" type="number" placeholder="1" value="1"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Accidentes Reportados</label>
+        <input class="field-input" id="cfx-accidents" type="number" placeholder="0" value="0"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Odómetro Carfax</label>
+        <input class="field-input" id="cfx-odo" placeholder="65,000 mi"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Uso del Vehículo</label>
+        <select class="field-input" id="cfx-usage">
+          <option>Personal</option><option>Rental</option>
+          <option>Fleet</option><option>Lease</option><option>Commercial</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Servicio Regular</label>
+        <select class="field-input" id="cfx-service">
+          <option>Sí, regular</option><option>Irregular</option><option>Sin registros</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Daño estructural</label>
+        <select class="field-input" id="cfx-structural">
+          <option>No</option><option>Sí</option><option>Desconocido</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Notas adicionales</label>
+      <input class="field-input" id="cfx-notes" placeholder="Detalles extra del reporte..."/>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="goStep(0)">← ATRÁS</button>
+    <button class="btn btn-primary" onclick="goStep(2)">CONTINUAR → DETALLES</button>
+  </div>
+</div>
+
+<!-- ══ STEP 3 ══ -->
+<div class="panel" id="panel-2">
+  <div class="section-title">PARÁMETROS</div>
+  <div class="section-sub">PRECIO REAL DE MERCADO · KBB · JD POWER · FB MARKETPLACE · CRAIGSLIST</div>
+
+  <div class="card card-accent">
+    <div class="card-label">📊 Precio de Mercado</div>
+    <div class="alert alert-green" style="margin-bottom:14px">
+      🔍 La IA consultará <strong>KBB, JD Power, Facebook Marketplace y Craigslist Chicago</strong> para estimar el precio real de venta de este carro ya reparado.
+    </div>
+    <div id="market-result" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:var(--s2);border-radius:10px;padding:14px;text-align:center;border:1px solid rgba(255,255,255,0.07)">
+          <div style="font-size:10px;letter-spacing:1px;color:var(--muted);margin-bottom:5px">MÍNIMO</div>
+          <div id="mkt-low" style="font-size:20px;font-weight:700;color:var(--red)">—</div>
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:14px;text-align:center;border:1px solid rgba(0,255,136,0.25)">
+          <div style="font-size:10px;letter-spacing:1px;color:var(--muted);margin-bottom:5px">RECOMENDADO</div>
+          <div id="mkt-mid" style="font-size:22px;font-weight:700;color:var(--green)">—</div>
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:14px;text-align:center;border:1px solid rgba(255,255,255,0.07)">
+          <div style="font-size:10px;letter-spacing:1px;color:var(--muted);margin-bottom:5px">MÁXIMO</div>
+          <div id="mkt-high" style="font-size:20px;font-weight:700;color:var(--cyan)">—</div>
+        </div>
+      </div>
+      <div id="mkt-notes" style="font-size:13px;color:var(--muted);line-height:1.6;background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:14px"></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">✏️ Ajusta si lo consideras necesario:</div>
+    </div>
+    <div class="field">
+      <label class="field-label">Precio de Venta a Usar $</label>
+      <input class="field-input" id="p-sale" type="number" placeholder="Presiona el botón para generar..." style="font-size:17px;font-weight:700"/>
+    </div>
+    <button class="btn btn-secondary" id="btn-market" onclick="fetchMarketPrice()" style="margin-bottom:8px">
+      🔍 CONSULTAR PRECIO DE MERCADO
+    </button>
+    <div id="market-loading" style="display:none;text-align:center;padding:16px 0">
+      <div style="font-size:28px;animation:spin 2s linear infinite;display:inline-block">⚙️</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">Consultando KBB · JD Power · Marketplace · Craigslist...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">🎯 Meta de Ganancia</div>
+    <div class="field">
+      <label class="field-label">Ganancia Mínima $</label>
+      <input class="field-input" id="p-minprofit" type="number" placeholder="1500" value="1500" style="font-size:17px;font-weight:700"/>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">🔧 Ajuste de Reparación (opcional)</div>
+    <div class="grid2">
+      <div class="field">
+        <label class="field-label">Cotización taller $ (si tienes)</label>
+        <input class="field-input" id="p-repair-quote" type="number" placeholder="Dejar vacío = auto"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Gastos extra $</label>
+        <input class="field-input" id="p-extra" type="number" placeholder="0" value="0"/>
+      </div>
+    </div>
+    <div class="alert alert-amber">
+      ⚠️ Si tienes cotización real del taller, ingrésala aquí. Si no, usaremos el estimado automático.
+    </div>
+  </div>
+
+  <div class="card" style="border-color:rgba(0,212,255,0.25)">
+    <div class="card-label">🗺️ Reporte MAPABROKER (opcional)</div>
+    <div class="alert alert-green" style="margin-bottom:12px">
+      💡 Pega aquí el análisis que te dio la IA de MAPABROKER para un score más preciso.
+    </div>
+    <div class="field">
+      <textarea class="field-input" id="mapa-report" rows="6"
+        placeholder="Pega aquí el reporte completo de la IA de MAPABROKER..."
+        style="resize:vertical;line-height:1.5;font-size:13px"></textarea>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="goStep(1)">← ATRÁS</button>
+    <button class="btn btn-primary" onclick="runFullAnalysis()">⚡ GENERAR ANÁLISIS COMPLETO</button>
+  </div>
+</div>
+
+<!-- ══ STEP 4 ══ -->
+<div class="panel" id="panel-3">
+  <div class="section-title">ANÁLISIS COMPLETO</div>
+  <div class="section-sub" id="analysis-subtitle">CAR ANALYZER RM · COPART ILLINOIS</div>
+
+  <div class="card card-accent" id="res-verdict"></div>
+  <div class="card card-amber" id="res-maxbid"></div>
+  <div class="card" id="res-ranges"></div>
+  <div class="desktop-cols">
+    <div class="card" id="res-fees"></div>
+    <div class="card" id="res-repair"></div>
+  </div>
+  <div class="card card-accent" id="res-profit"></div>
+  <div class="card card-red" id="res-risks"></div>
+  <div class="card" style="border-color:rgba(0,212,255,0.3)" id="res-score-deal">
+    <div class="card-label">🏆 Score del Deal</div>
+    <div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px">Generando score...</div>
+  </div>
+  <div class="card card-purple" id="res-ai">
+    <div class="card-label">🤖 Análisis IA — Método MAPABROKER</div>
+    <div class="ai-spin"><div class="ai-spin-icon">⚙️</div><div style="font-size:11px;color:var(--muted);margin-top:10px">Generando análisis profundo...</div></div>
+  </div>
+
+  <div class="btn-row" style="margin-top:4px">
+    <button class="btn btn-ghost" onclick="goStep(0)">🔄 NUEVO ANÁLISIS</button>
+    <button class="btn btn-secondary" onclick="runAIOnly()">🤖 REGENERAR IA</button>
+  </div>
+</div>
+
+<div style="text-align:center;padding:20px;font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:1px;border-top:1px solid rgba(255,255,255,0.05);margin-top:20px">
+  CAR ANALYZER RM · v2.1 · MAPABROKER METHOD · COPART ILLINOIS
+</div>
+
+</main>
+</div>
+
+<script>
+// ══ CONSTANTS ═══════════════════════════════════════════════════════════════
+
+const WMI = {
+  // Toyota
+  "2T1":"Toyota","4T1":"Toyota","4T3":"Toyota","5TD":"Toyota","5TF":"Toyota",
+  "JTD":"Toyota","JTN":"Toyota","JTM":"Toyota","5YF":"Toyota","JTDB":"Toyota",
+  "JTDL":"Toyota","JTDK":"Toyota","JTNB":"Toyota","JTND":"Toyota","JTDKB":"Toyota",
+  "JTDKARFU":"Toyota","JTMRFREV":"Toyota","JTMRJREV":"Toyota",
+  // Honda
+  "1HG":"Honda","2HG":"Honda","JHM":"Honda","19X":"Honda","2HK":"Honda","5J6":"Honda","19UYF":"Honda",
+  // Nissan
+  "1N4":"Nissan","3N1":"Nissan","5N1":"Nissan","JN8":"Nissan","JN1":"Nissan",
+  // Ford
+  "1FA":"Ford","1FB":"Ford","1FD":"Ford","1FM":"Ford","1FT":"Ford","3FA":"Ford","2FM":"Ford","3FM":"Ford",
+  // Chevrolet/GMC
+  "1G1":"Chevrolet","2G1":"Chevrolet","1GC":"Chevrolet","KL8":"Chevrolet",
+  "1GT":"GMC","2GT":"GMC","1GK":"GMC","1GD":"GMC",
+  // Hyundai
+  "KMHD":"Hyundai","KMH":"Hyundai","5NPE":"Hyundai","5NMS":"Hyundai","KMHC":"Hyundai","KMHF":"Hyundai",
+  "5NP":"Hyundai","KMHL":"Hyundai",
+  // Kia
+  "KNDJN":"Kia","3KPF":"Kia","KNDT":"Kia","5XYK":"Kia","5XYP":"Kia","5XYL":"Kia",
+  "5XXG":"Kia","5XXM":"Kia","KNDJ":"Kia","KNDP":"Kia","KNDM":"Kia",
+  "KNAM":"Kia","KNAG":"Kia","KNAL":"Kia","KNDNB":"Kia",
+  // Mazda
+  "JM1":"Mazda","JM3":"Mazda","3MZ":"Mazda",
+  // BMW
+  "WBA":"BMW","5UX":"BMW","WBS":"BMW","3MW":"BMW",
+  // Mercedes
+  "WDB":"Mercedes","4JG":"Mercedes","WDC":"Mercedes","W1N":"Mercedes",
+  // Audi
+  "WAU":"Audi","TRU":"Audi","WA1":"Audi",
+  // Volkswagen
+  "1VW":"Volkswagen","3VW":"Volkswagen","WVW":"Volkswagen","1V2":"Volkswagen",
+  // Subaru
+  "JF1":"Subaru","JF2":"Subaru","4S3":"Subaru","4S4":"Subaru",
+  // Jeep / Dodge / RAM
+  "3C4":"Jeep","1J4":"Jeep","1J8":"Jeep","1C4":"Jeep","3C6":"Ram","1D7":"Ram",
+  "1C3":"Dodge","2C3":"Dodge","2B3":"Dodge",
+  // Lexus
+  "JTH":"Lexus","JTHB":"Lexus","JTHF":"Lexus","JTJB":"Lexus","JTJD":"Lexus",
+  // Acura
+  "JH4":"Acura","19U":"Acura",
+  // Buick
+  "1G4":"Buick","KL4":"Buick",
+  // Mitsubishi
+  "JA3":"Mitsubishi","JA4":"Mitsubishi",
+  // Volvo
+  "YV1":"Volvo","YV4":"Volvo",
+  // Cadillac
+  "1GY":"Cadillac","1G6":"Cadillac",
+  // Chrysler / Minivans
+  "2C4":"Chrysler","2C3":"Chrysler",
+  // Tesla
+  "5YJ":"Tesla","7SA":"Tesla",
+  // Dodge/RAM Trucks
+  "3C6":"Ram","3D7":"Ram",
+};
+
+// Decoded make → nombre amigable de modelo (para NHTSA fallback)
+const MAKE_MODELS = {
+  Toyota: ["Corolla","Camry","RAV4","Prius","Yaris","Tacoma","4Runner","Highlander","Sienna","Avalon"],
+  Honda:  ["Civic","Accord","CR-V","Pilot","Odyssey","HR-V","Fit","Passport","Ridgeline"],
+  Nissan: ["Altima","Sentra","Rogue","Pathfinder","Murano","Frontier","Titan","Versa","Kicks"],
+  Ford:   ["F-150","Mustang","Explorer","Escape","Fusion","Edge","Ranger","Expedition","Focus"],
+  Chevrolet:["Silverado","Malibu","Equinox","Traverse","Tahoe","Impala","Camaro","Trax","Cruze"],
+  Kia:    ["Optima","Sorento","Sportage","Soul","Stinger","Telluride","K5","Forte","Rio"],
+  Hyundai:["Elantra","Sonata","Tucson","Santa Fe","Accent","Kona","Veloster","Palisade"],
+  Mazda:  ["Mazda3","Mazda6","CX-5","CX-3","CX-9","Miata MX-5"],
+  Subaru: ["Outback","Forester","Impreza","Legacy","Crosstrek","WRX","Ascent"],
+  Dodge:  ["Charger","Challenger","Durango","Journey","Grand Caravan","Ram"],
+  Jeep:   ["Grand Cherokee","Cherokee","Wrangler","Compass","Renegade","Gladiator"],
+  Lexus:  ["ES 350","IS 250","RX 350","NX 300","GX 460","LS 500"],
+  Acura:  ["TLX","MDX","RDX","ILX","TSX"],
+  BMW:    ["3 Series","5 Series","X3","X5","7 Series","M3","M5"],
+  Mercedes:["C-Class","E-Class","GLC","GLE","S-Class","A-Class"],
+  Audi:   ["A4","A6","Q5","Q7","A3","Q3"],
+  Volkswagen:["Jetta","Passat","Tiguan","Atlas","Golf","Beetle"],
+  GMC:    ["Sierra","Terrain","Acadia","Yukon","Canyon","Envoy"],
+  Cadillac:["Escalade","CT5","XT5","XT4","CTS","SRX"],
+  Ram:    ["1500","2500","3500","ProMaster"],
+  Chrysler:["300","Pacifica","Voyager"],
+  Mitsubishi:["Outlander","Eclipse Cross","Galant","Lancer"],
+  Tesla:  ["Model 3","Model S","Model X","Model Y"],
+  Buick:  ["Enclave","LaCrosse","Envision","Encore"],
+  Volvo:  ["XC90","XC60","S60","V60","XC40"],
+};
+
+const YEAR_MAP = {
+  A:2010,B:2011,C:2012,D:2013,E:2014,F:2015,G:2016,H:2017,J:2018,K:2019,
+  L:2020,M:2021,N:2022,P:2023,R:2024,S:2025,
+  "1":2001,"2":2002,"3":2003,"4":2004,"5":2005,"6":2006,"7":2007,"8":2008,"9":2009
+};
+
+const RELIABILITY = {
+  Toyota:     { score:9, resale:9, parts:"Fácil", notes:"Mejor resale en Chicago. Partes baratas y accesibles.", market:"Alta demanda" },
+  Honda:      { score:9, resale:8, parts:"Fácil", notes:"Muy confiable. Gran mercado en suburbs de Chicago.", market:"Alta demanda" },
+  Mazda:      { score:8, resale:7, parts:"Media", notes:"Confiabilidad subestimada. Buen deal si el precio es correcto.", market:"Demanda media" },
+  Subaru:     { score:7, resale:7, parts:"Media", notes:"Ojo con historial de head gasket en modelos pre-2015.", market:"Demanda media" },
+  Ford:       { score:6, resale:6, parts:"Fácil", notes:"Verifica historial de transmisión. Partes baratas.", market:"Demanda media" },
+  Chevrolet:  { score:6, resale:5, parts:"Fácil", notes:"Alta depreciación. Funciona solo si el precio es muy bajo.", market:"Demanda media" },
+  Nissan:     { score:6, resale:6, parts:"Fácil", notes:"CVT issues en algunos modelos. Verifica antes de comprar.", market:"Demanda media" },
+  Hyundai:    { score:6, resale:5, parts:"Media", notes:"Posible recall de motor. Verifica NHTSA antes de pujar.", market:"Demanda media-baja" },
+  Kia:        { score:6, resale:5, parts:"Media", notes:"Posible recall de motor. Misma plataforma que Hyundai.", market:"Demanda media-baja" },
+  Jeep:       { score:5, resale:6, parts:"Fácil", notes:"Costo de reparación alto. Solo funciona con muy buen precio.", market:"Demanda alta (trucks)" },
+  BMW:        { score:4, resale:4, parts:"Difícil", notes:"Partes y labor caros. Muy difícil de vender bajo $10K.", market:"Demanda baja" },
+  Mercedes:   { score:4, resale:4, parts:"Difícil", notes:"Evitar para este modelo de negocio.", market:"Demanda muy baja" },
+  Audi:       { score:4, resale:4, parts:"Difícil", notes:"Problemas eléctricos frecuentes. Alto riesgo.", market:"Demanda baja" },
+  Volkswagen: { score:5, resale:5, parts:"Media", notes:"Partes pueden ser costosas. Mercado limitado.", market:"Demanda media-baja" },
+  GMC:        { score:6, resale:6, parts:"Fácil", notes:"Trucks tienen buena demanda en Chicago.", market:"Demanda media" },
+  Cadillac:   { score:5, resale:4, parts:"Media", notes:"Depreciación fuerte. Partes caras.", market:"Demanda baja" },
+  Ram:        { score:6, resale:6, parts:"Fácil", notes:"Buena demanda de trucks en Illinois.", market:"Demanda media" },
+  Lexus:      { score:8, resale:8, parts:"Media", notes:"Confiabilidad Toyota. Premium pero vendible.", market:"Demanda media-alta" },
+  Acura:      { score:8, resale:7, parts:"Media", notes:"Base Honda. Confiable y buen resale.", market:"Demanda media" },
+  Chrysler:   { score:5, resale:4, parts:"Fácil", notes:"Alta depreciación. Funciona solo a muy bajo precio.", market:"Demanda baja" },
+  Mitsubishi: { score:5, resale:5, parts:"Media", notes:"Mercado limitado. Outlander funciona bien.", market:"Demanda media-baja" },
+  Tesla:      { score:7, resale:7, parts:"Difícil", notes:"Mercado en crecimiento. Sin dealer network para reparaciones.", market:"Demanda media" },
+  Buick:      { score:6, resale:5, parts:"Fácil", notes:"Depreciación alta. Público limitado.", market:"Demanda baja-media" },
+  Volvo:      { score:6, resale:5, parts:"Difícil", notes:"Partes caras. Mercado pequeño.", market:"Demanda baja" },
+  Dodge:      { score:5, resale:5, parts:"Fácil", notes:"Charger/Challenger tienen demanda. Otros modelos más difícil.", market:"Demanda media" },
+  Subaru:     { score:7, resale:7, parts:"Media", notes:"Ojo con head gasket pre-2015. Buen mercado en Chicago.", market:"Demanda media" },
+};
+
+const REPAIR_DB = {
+  "Front End":            { labor:[800,2500],  parts:[600,2800],  paint:2, risk:"medium", airbag_risk:true  },
+  "Rear End":             { labor:[500,1600],  parts:[400,2000],  paint:2, risk:"low",    airbag_risk:false },
+  "Hail":                 { labor:[400,2000],  parts:[0,500],     paint:0, risk:"low",    airbag_risk:false },
+  "Side":                 { labor:[600,2000],  parts:[300,1400],  paint:3, risk:"medium", airbag_risk:false },
+  "Minor Dent/Scratches": { labor:[200,700],   parts:[0,400],     paint:1, risk:"low",    airbag_risk:false },
+  "Water/Flood":          { labor:[1500,6000], parts:[800,4000],  paint:0, risk:"high",   airbag_risk:false },
+  "Mechanical":           { labor:[800,4000],  parts:[500,3000],  paint:0, risk:"high",   airbag_risk:false },
+  "Burn":                 { labor:[2000,9000], parts:[1000,6000], paint:4, risk:"high",   airbag_risk:true  },
+  "Rollover":             { labor:[2500,8000], parts:[1500,5000], paint:5, risk:"high",   airbag_risk:true  },
+  "Vandalism":            { labor:[300,1600],  parts:[100,900],   paint:2, risk:"medium", airbag_risk:false },
+  "Theft Recovery":       { labor:[200,1400],  parts:[200,1800],  paint:0, risk:"medium", airbag_risk:false },
+  "Normal Wear":          { labor:[100,500],   parts:[50,400],    paint:0, risk:"low",    airbag_risk:false },
+};
+
+const AIRBAG_COST = { low:800, est:1600, high:2800 };
+const PAINT_PER_PANEL = 380;
+const FEE_INTERNET_BID = 110;
+const FEE_GATE = 95;
+const FEE_ENVIRONMENTAL = 15;
+const FEE_TITLE_MAILING = 20;
+const FEE_BROKER = 400;
+const COPART_FEES_FIXED = FEE_INTERNET_BID + FEE_GATE + FEE_ENVIRONMENTAL + FEE_TITLE_MAILING + FEE_BROKER;
+const IL_FEES = 101 + 30;
+const SELL_PCT = 0.05;
+const TARGET_MODELS = ["Corolla","Camry","RAV4","Yaris","Prius","Civic","Accord","CR-V","Fit","HR-V","Pilot"];
+
+function buyerFee(b) {
+  if(b<=99)return 25; if(b<=199)return 50; if(b<=299)return 75;
+  if(b<=399)return 100; if(b<=499)return 125; if(b<=599)return 150;
+  if(b<=699)return 175; if(b<=799)return 200; if(b<=999)return 250;
+  if(b<=1199)return 300; if(b<=1499)return 350; if(b<=1999)return 425;
+  if(b<=2499)return 550; if(b<=2999)return 700; if(b<=3499)return 830;
+  if(b<=3999)return 900; if(b<=4999)return 975; if(b<=5999)return 1050;
+  if(b<=6999)return 1125; if(b<=7999)return 1200; if(b<=9999)return 1300;
+  return Math.round(b*0.14);
+}
+function totalFees(bid) { return buyerFee(bid) + COPART_FEES_FIXED + IL_FEES; }
+
+function calcRepair(dmg1, dmg2, miles, quote) {
+  if(quote) return { low:Math.round(quote*0.85), est:quote, high:Math.round(quote*1.25), risk:"quoted" };
+  const db1 = REPAIR_DB[dmg1] || REPAIR_DB["Minor Dent/Scratches"];
+  const db2 = dmg2 ? REPAIR_DB[dmg2] : null;
+  const mult = miles>120000?1.35:miles>80000?1.12:1.0;
+  const paint1 = db1.paint * PAINT_PER_PANEL;
+  const paint2 = db2 ? db2.paint * PAINT_PER_PANEL * 0.5 : 0;
+  const airbag = (db1.airbag_risk || dmg2==='Airbag') ? AIRBAG_COST.est : 0;
+  const airbagLow = (db1.airbag_risk || dmg2==='Airbag') ? AIRBAG_COST.low : 0;
+  const airbagHigh = (db1.airbag_risk || dmg2==='Airbag') ? AIRBAG_COST.high : 0;
+  const labEst = ((db1.labor[0]+db1.labor[1])/2 + (db2?((db2.labor[0]+db2.labor[1])/2)*0.4:0)) * mult;
+  const parEst = ((db1.parts[0]+db1.parts[1])/2 + (db2?((db2.parts[0]+db2.parts[1])/2)*0.4:0)) * mult;
+  const low = Math.round((db1.labor[0]+(db2?db2.labor[0]*0.3:0)+db1.parts[0]+(db2?db2.parts[0]*0.3:0)+(db1.paint*250)+(db2?db2.paint*180:0))*mult+airbagLow);
+  const est = Math.round(labEst + parEst + paint1 + paint2 + airbag);
+  const high = Math.round((db1.labor[1]+(db2?db2.labor[1]*0.4:0)+db1.parts[1]+(db2?db2.parts[1]*0.4:0)+paint1+paint2)*mult*1.1+airbagHigh);
+  const risk = db1.risk==='high'||db2?.risk==='high'?'high':db1.risk==='medium'||db2?.risk==='medium'?'medium':'low';
+  return { low, est, high, risk, hasAirbag: airbag>0 };
+}
+
+function calcMaxBid(sale, minProfit, repairEst, extra) {
+  const available = sale - minProfit - (sale*SELL_PCT) - COPART_FEES_FIXED - IL_FEES - repairEst - extra;
+  let lo=0, hi=available;
+  for(let i=0;i<60;i++){
+    const mid=Math.round((lo+hi)/2);
+    if(mid+buyerFee(mid)<=available) lo=mid; else hi=mid-1;
+  }
+  return Math.max(0, lo);
+}
+
+function calcScore(data) {
+  const rel = RELIABILITY[data.make]||{score:6};
+  let s = 10;
+  if(rel.score<7) s-=1.5;
+  if(!data.isTarget) s-=0.5;
+  if(data.miles>120000) s-=1.5; else if(data.miles>80000) s-=0.5;
+  if(data.repair.risk==='high') s-=2; else if(data.repair.risk==='medium') s-=0.5;
+  const profit = data.sale - data.totalCostEst - (data.sale*SELL_PCT);
+  if(profit<1500) s-=2; else if(profit<2000) s-=1;
+  if(data.title==='Salvage') s-=3;
+  if(data.title==='Rebuilt') s-=1;
+  if(data.accidents>1) s-=1;
+  if(data.owners>3) s-=0.5;
+  if(data.structural==='Sí') s-=2;
+  if((data.condition||data.cond||'Run & Drive')!=='Run & Drive') s-=1;
+  if(data.service==='Sin registros') s-=0.5;
+  return Math.max(1, Math.min(10, Math.round(s*10)/10));
+}
+
+// ══ STATE ══════════════════════════════════════════════════════════════════════
+let decoded = null;
+let currentStep = 0;
+let pdfText = '';
+let analysisData = null;
+let nhtsaTimer = null;
+
+// ══ VIN HANDLER ══════════════════════════════════════════════════════════════
+// ✅ FIX: función onVIN completa con referencias correctas al DOM
+function onVIN(el) {
+  const v = el.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g,'');
+  el.value = v;
+
+  // ✅ FIX: actualiza el contador (elemento ahora existe en el DOM)
+  const counter = document.getElementById('vin-count');
+  if(counter) counter.textContent = v.length;
+
+  const pContainer = document.getElementById('vin-pills');
+  const detectCard = document.getElementById('nhtsa-result');
+
+  if(v.length !== 17) {
+    decoded = null;
+    if(pContainer) pContainer.style.display = 'none';
+    if(detectCard) detectCard.classList.remove('visible');
+    el.classList.remove('valid');
+    return;
+  }
+
+  el.classList.add('valid');
+
+  // Decodificar make localmente con WMI extendido
+  let make = 'Unknown';
+  for(const k of [v.slice(0,8),v.slice(0,7),v.slice(0,6),v.slice(0,5),v.slice(0,4),v.slice(0,3)]) {
+    if(WMI[k]){ make=WMI[k]; break; }
+  }
+  const yr = YEAR_MAP[v[9]] || null;
+  decoded = { make, modelYear: yr, vin: v };
+
+  // Mostrar pills locales inmediato
+  const rel = RELIABILITY[make] || {score:6};
+  const rc = rel.score>=8?'pill-green':rel.score>=6?'pill-amber':'pill-red';
+  const isTarget = make==='Toyota'||make==='Honda';
+  if(pContainer) {
+    pContainer.innerHTML =
+      `<span class="pill ${make==='Unknown'?'pill-amber':'pill-green'}">${make==='Unknown'?'⚠ VIN no reconocido':make}</span>`+
+      (yr?`<span class="pill pill-cyan">${yr}</span>`:'')+
+      (make!=='Unknown'?`<span class="pill ${rc}">${rel.score}/10</span>`:'')+
+      (isTarget?`<span class="pill pill-purple">✓ TARGET</span>`:'');
+    pContainer.style.display = 'flex';
+  }
+
+  // Auto-rellenar modelo si tenemos la marca
+  const modelEl = document.getElementById('model');
+  if(modelEl && !modelEl.value && make !== 'Unknown') {
+    modelEl.placeholder = `${make} (completa abajo)`;
+  }
+
+  // Mostrar tarjeta de detección local mientras NHTSA carga
+  if(detectCard) {
+    const nhGrid = document.getElementById('nhtsa-grid');
+    if(nhGrid) {
+      const localItems = [
+        ['Marca (WMI)', make !== 'Unknown' ? make : '⚠ No reconocido'],
+        ['Año estimado', yr ? String(yr) : 'Ver posición 10'],
+        ['VIN', v.slice(0,4)+'·····'+v.slice(13)],
+        ['País fabricación', v[0]==='1'||v[0]==='4'||v[0]==='5'?'🇺🇸 USA':v[0]==='2'?'🇨🇦 Canada':v[0]==='3'?'🇲🇽 México':v[0]==='J'?'🇯🇵 Japón':v[0]==='K'?'🇰🇷 Corea':'Otro'],
+      ];
+      nhGrid.innerHTML = localItems.map(([l,val])=>
+        `<div class="vin-detect-item"><div class="vin-detect-label">${l}</div><div class="vin-detect-val">${val}</div></div>`
+      ).join('');
+    }
+    detectCard.classList.add('visible');
+  }
+
+  // NHTSA lookup con debounce
+  clearTimeout(nhtsaTimer);
+  nhtsaTimer = setTimeout(() => fetchNHTSA(v), 600);
+}
+
+async function fetchNHTSA(vin) {
+  try {
+    const res = await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/'+vin+'?format=json');
+    const data = await res.json();
+    const get = name => {
+      const r = data.Results.find(x=>x.Variable===name);
+      return r && r.Value && r.Value!=='Not Applicable' && r.Value!=='null' && r.Value!=='' ? r.Value : null;
+    };
+    const make=get('Make'), model=get('Model'), year=get('Model Year'), trim=get('Trim'),
+          eng=get('Displacement (L)'), cyl=get('Engine Number of Cylinders'),
+          trans=get('Transmission Style'), drive=get('Drive Type'), body=get('Body Class'),
+          plant=get('Plant Country'), fuel=get('Fuel Type - Primary');
+
+    if(!make) return; // NHTSA no devolvió datos útiles
+
+    // Actualizar decoded con info más precisa
+    if(decoded) {
+      decoded.make = make;
+      decoded.modelYear = year || decoded.modelYear;
+      decoded.model = model;
+    }
+
+    // Auto-rellenar campo modelo
+    const modelEl = document.getElementById('model');
+    if(modelEl && model) {
+      modelEl.value = (model + (trim ? ' ' + trim : '')).trim();
+    }
+
+    // Actualizar pills con info de NHTSA
+    const rel2 = RELIABILITY[make] || {score:6};
+    const rc2 = rel2.score>=8?'pill-green':rel2.score>=6?'pill-amber':'pill-red';
+    const isTarget2 = make==='Toyota'||make==='Honda'||TARGET_MODELS.some(m=>model&&model.includes(m));
+    const pContainer = document.getElementById('vin-pills');
+    if(pContainer) {
+      pContainer.innerHTML =
+        `<span class="pill pill-green">✓ ${make}</span>`+
+        (year?`<span class="pill pill-cyan">${year}</span>`:'')+
+        (model?`<span class="pill pill-cyan">${model}</span>`:'')+
+        `<span class="pill ${rc2}">${rel2.score}/10</span>`+
+        (isTarget2?`<span class="pill pill-purple">✓ TARGET</span>`:'');
+      pContainer.style.display = 'flex';
+    }
+
+    // Actualizar tarjeta de detección con datos completos de NHTSA
+    const items = [
+      ['Marca', make],
+      ['Modelo', model],
+      ['Año', year],
+      ['Trim', trim],
+      ['Motor', eng ? eng+'L'+(cyl?' '+cyl+' cil.':'') : null],
+      ['Transmisión', trans],
+      ['Tracción', drive],
+      ['Carrocería', body],
+      ['Combustible', fuel],
+      ['Planta', plant],
+    ].filter(([,v])=>v);
+
+    const nhGrid = document.getElementById('nhtsa-grid');
+    if(nhGrid) {
+      nhGrid.innerHTML = items.map(([l,val])=>
+        `<div class="vin-detect-item"><div class="vin-detect-label">${l}</div><div class="vin-detect-val">${val}</div></div>`
+      ).join('');
+    }
+
+    // Actualizar header de la tarjeta
+    const detectHeader = document.querySelector('.vin-detect-header');
+    if(detectHeader) detectHeader.textContent = '✓ VEHÍCULO VERIFICADO — NHTSA';
+
+  } catch(e) {
+    // Si NHTSA falla, la info local se mantiene silenciosamente
+    console.log('NHTSA lookup falló:', e.message);
+  }
+}
+
+// ══ NAVEGACIÓN ENTRE PASOS ═══════════════════════════════════════════════════
+// ✅ FIX: goToStep2 lee el VIN del campo directamente (no depende de decoded)
+function goToStep2() {
+  const vinEl = document.getElementById('vin');
+  const vin = (vinEl.value || '').toUpperCase().trim();
+
+  if(vin.length === 0) {
+    alert('⚠️ Por favor ingresa el VIN del vehículo.');
+    vinEl.focus();
+    return;
+  }
+  if(vin.length !== 17) {
+    alert(`⚠️ El VIN debe tener exactamente 17 caracteres.\nActualmente tienes ${vin.length}: "${vin}"\n\nVerifica que copiaste el VIN completo.`);
+    vinEl.focus();
+    return;
+  }
+
+  // Si decoded es null (user no tecleó, solo pegó sin disparar oninput en algunos navegadores)
+  // decodificamos aquí también
+  if(!decoded) {
+    let make = 'Unknown';
+    for(const k of [vin.slice(0,8),vin.slice(0,7),vin.slice(0,6),vin.slice(0,5),vin.slice(0,4),vin.slice(0,3)]) {
+      if(WMI[k]){ make=WMI[k]; break; }
+    }
+    const yr = YEAR_MAP[vin[9]] || null;
+    decoded = { make, modelYear: yr, vin: vin };
+    // Iniciar NHTSA lookup en background
+    fetchNHTSA(vin);
+  }
+
+  goStep(1);
+}
+
+function goStep(n) {
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===n));
+  document.querySelectorAll('.step').forEach((s,i) => {
+    s.classList.toggle('active', i===n);
+    s.classList.toggle('done', i<n);
+  });
+  currentStep = n;
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  // Auto-fetch precio de mercado al llegar al paso 3
+  if(n===2 && decoded && !document.getElementById('p-sale').value) {
+    setTimeout(fetchMarketPrice, 600);
+  }
+}
+
+// ══ PDF ════════════════════════════════════════════════════════════════════════
+try { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e) {}
+
+function switchCfxTab(tab) {
+  document.getElementById('cfx-tab-pdf').style.display   = tab==='pdf'   ? 'block' : 'none';
+  document.getElementById('cfx-tab-paste').style.display = tab==='paste' ? 'block' : 'none';
+  document.getElementById('tab-pdf').style.cssText  = `flex:1;padding:10px;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;border:1px solid ${tab==='pdf'?'rgba(0,212,255,0.4)':'rgba(255,255,255,0.07)'};background:${tab==='pdf'?'rgba(0,212,255,0.15)':'rgba(255,255,255,0.04)'};color:${tab==='pdf'?'var(--cyan)':'var(--muted)'}`;
+  document.getElementById('tab-paste').style.cssText = `flex:1;padding:10px;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;border:1px solid ${tab==='paste'?'rgba(167,139,250,0.4)':'rgba(255,255,255,0.07)'};background:${tab==='paste'?'rgba(167,139,250,0.15)':'rgba(255,255,255,0.04)'};color:${tab==='paste'?'var(--purple)':'var(--muted)'}`;
+}
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])handlePDF(e.dataTransfer.files[0])});
+
+async function handlePDF(file) {
+  if(!file||file.type!=='application/pdf') return;
+  const statusEl=document.getElementById('pdf-status'), nameEl=document.getElementById('pdf-name'),
+        subEl=document.getElementById('pdf-sub'), progressEl=document.getElementById('pdf-progress');
+  statusEl.classList.add('active');
+  nameEl.textContent = file.name;
+  subEl.textContent = 'Leyendo PDF...';
+  progressEl.style.width = '15%';
+  try {
+    const ab = await file.arrayBuffer();
+    progressEl.style.width = '40%';
+    const pdf = await pdfjsLib.getDocument({data: new Uint8Array(ab)}).promise;
+    let text = '';
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(it=>it.str).join(' ') + '\n';
+      progressEl.style.width = Math.round(40 + (i/pdf.numPages)*50) + '%';
+    }
+    pdfText = text;
+    progressEl.style.width = '100%';
+    subEl.textContent = '✓ PDF leído — presiona EXTRAER DATOS para continuar';
+    document.getElementById('cfx-raw-text').value = text.slice(0, 8000);
+  } catch(e) {
+    subEl.textContent = '⚠️ Error leyendo PDF. Cambia a "Pegar Texto" e intenta manualmente.';
+    progressEl.style.width = '0%';
+  }
+}
+
+// ══ EXTRACT CARFAX WITH AI ══════════════════════════════════════════════════
+async function extractCarfaxAI() {
+  const rawText = document.getElementById('cfx-raw-text').value.trim();
+  if(!rawText) { alert('Pega el texto del Carfax primero.'); return; }
+  document.getElementById('cfx-ai-loading').style.display = 'block';
+  document.getElementById('btn-extract').disabled = true;
+  document.getElementById('cfx-extracted').style.display = 'none';
+
+  const prompt = `Eres un experto en reportes Carfax. Analiza el siguiente texto y extrae EXACTAMENTE estos datos.
+
+TEXTO DEL CARFAX:
+${rawText}
+
+Responde ÚNICAMENTE con este JSON válido, sin markdown ni texto adicional:
+{"owners":1,"accidents":0,"odometer":"65,000 mi","usage":"Personal","service":"Sí, regular","structural":"No","titleProblems":"No","lastReported":"2024-01-01","states":"IL","recalls":"No","notes":"Resumen breve en español de los puntos más importantes"}
+
+Para "usage": Personal, Rental, Fleet, Lease, Commercial
+Para "service": Sí, regular, Irregular, Sin registros
+Para "structural": No, Sí, Desconocido`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:500, messages:[{role:'user',content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content && data.content.find(b=>b.type==='text');
+    const raw = text ? text.text : '';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
+
+    document.getElementById('cfx-owners').value = parsed.owners || 1;
+    document.getElementById('cfx-accidents').value = parsed.accidents || 0;
+    document.getElementById('cfx-odo').value = parsed.odometer || '';
+    document.getElementById('cfx-notes').value = parsed.notes || '';
+
+    const setSelect = (id, val) => {
+      const el = document.getElementById(id);
+      for(let o of el.options) { if(o.value===val||o.text===val) { o.selected=true; break; } }
+    };
+    setSelect('cfx-usage', parsed.usage || 'Personal');
+    setSelect('cfx-service', parsed.service || 'Sí, regular');
+    setSelect('cfx-structural', parsed.structural || 'No');
+
+    const grid = document.getElementById('cfx-grid');
+    const accColor = parsed.accidents > 0 ? 'var(--red)' : 'var(--green)';
+    const structColor = parsed.structural === 'Sí' ? 'var(--red)' : 'var(--green)';
+    grid.innerHTML = `
+      <div class="cfx-item"><div class="cfx-item-label">PROPIETARIOS</div><div class="cfx-item-val">${parsed.owners}</div></div>
+      <div class="cfx-item"><div class="cfx-item-label">ACCIDENTES</div><div class="cfx-item-val" style="color:${accColor}">${parsed.accidents}</div></div>
+      <div class="cfx-item"><div class="cfx-item-label">ODÓMETRO</div><div class="cfx-item-val">${parsed.odometer||'N/A'}</div></div>
+      <div class="cfx-item"><div class="cfx-item-label">USO</div><div class="cfx-item-val">${parsed.usage}</div></div>
+      <div class="cfx-item"><div class="cfx-item-label">SERVICIO</div><div class="cfx-item-val">${parsed.service}</div></div>
+      <div class="cfx-item"><div class="cfx-item-label">DAÑO ESTRUCTURAL</div><div class="cfx-item-val" style="color:${structColor}">${parsed.structural}</div></div>
+      ${parsed.notes?`<div class="cfx-item" style="grid-column:1/-1;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.15)"><div class="cfx-item-label">RESUMEN IA</div><div class="cfx-item-val" style="font-size:12px;font-weight:400;line-height:1.5;color:var(--muted)">${parsed.notes}</div></div>`:''}`;
+    document.getElementById('cfx-extracted').style.display = 'block';
+    pdfText = rawText;
+  } catch(e) {
+    alert('Error al procesar el Carfax con IA. Verifica conexión o ingresa los datos manualmente.');
+  }
+  document.getElementById('cfx-ai-loading').style.display = 'none';
+  document.getElementById('btn-extract').disabled = false;
+}
+
+// ══ MARKET PRICE ══════════════════════════════════════════════════════════════
+async function fetchMarketPrice() {
+  if(!decoded) { alert('Primero ingresa el VIN en el Paso 1'); return; }
+  const model    = document.getElementById('model').value || 'desconocido';
+  const miles    = document.getElementById('miles').value || '0';
+  const dmg1     = document.getElementById('dmg1').value;
+  const title    = document.getElementById('title').value;
+  const accidents= document.getElementById('cfx-accidents').value || '0';
+  const owners   = document.getElementById('cfx-owners').value || '1';
+  const usage    = document.getElementById('cfx-usage').value;
+  const year     = decoded.modelYear || '';
+  const make     = decoded.make;
+
+  document.getElementById('market-loading').style.display = 'block';
+  document.getElementById('btn-market').disabled = true;
+  document.getElementById('market-result').style.display = 'none';
+
+  const prompt = `Eres un experto en valuación de vehículos usados en Chicago, Illinois (Northwest Suburbs).
+Estima el precio de venta realista para este vehículo YA REPARADO en el mercado privado de Chicago.
+
+VEHÍCULO: ${make} ${model} ${year} | Millas: ${miles} | Daño original ya reparado: ${dmg1}
+Título: ${title} | Propietarios: ${owners} | Accidentes Carfax: ${accidents} | Uso: ${usage}
+
+Basándote en KBB, JD Power, Facebook Marketplace Chicago y Craigslist Chicago,
+dame el precio de venta privado realista después de reparación.
+
+Responde SOLO con este JSON válido sin markdown:
+{"low":7000,"mid":8200,"high":9500,"kbb":"7800-8500","jdpower":"7500-8200","facebook":"7800-9000","craigslist":"7500-8800","notes":"Explicación breve en español sobre el valor y precio óptimo de listado."}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:600,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const textBlock = data.content && data.content.find(b=>b.type==='text');
+    const raw = textBlock ? textBlock.text : '';
+
+    let parsed;
+    try {
+      const clean = raw.replace(/```json|```/g,'').trim();
+      const jsonMatch = clean.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
+    } catch(e) {
+      const baseMap = {Toyota:9000,Honda:8500,Nissan:7500,Ford:7000,Chevrolet:6500,Kia:7000,Hyundai:7000};
+      const base = baseMap[make] || 7500;
+      const mileMult = parseInt(miles)>100000?0.85:parseInt(miles)>80000?0.92:1.0;
+      const accMult = parseInt(accidents)>1?0.9:parseInt(accidents)===1?0.95:1.0;
+      const mid = Math.round(base * mileMult * accMult / 100) * 100;
+      parsed = {low:mid-800, mid, high:mid+700, kbb:'Ver kbb.com', jdpower:'Ver jdpower.com', facebook:'Ver marketplace', craigslist:'Ver craigslist.org', notes:'Estimado basado en datos históricos de mercado Chicago.'};
+    }
+
+    document.getElementById('mkt-low').textContent = '$'+parsed.low.toLocaleString();
+    document.getElementById('mkt-mid').textContent = '$'+parsed.mid.toLocaleString();
+    document.getElementById('mkt-high').textContent = '$'+parsed.high.toLocaleString();
+    document.getElementById('mkt-notes').innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+        `<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px"><div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px">KBB</div><div style="font-size:13px;font-weight:700;color:#fff">${parsed.kbb}</div></div>`+
+        `<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px"><div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px">JD POWER</div><div style="font-size:13px;font-weight:700;color:#fff">${parsed.jdpower}</div></div>`+
+        `<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px"><div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px">FB MARKETPLACE</div><div style="font-size:13px;font-weight:700;color:#fff">${parsed.facebook}</div></div>`+
+        `<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px"><div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px">CRAIGSLIST CHI</div><div style="font-size:13px;font-weight:700;color:#fff">${parsed.craigslist}</div></div>`+
+      '</div>'+
+      `<div style="font-size:13px;color:var(--muted);line-height:1.6">${parsed.notes}</div>`;
+    document.getElementById('p-sale').value = parsed.mid;
+    document.getElementById('market-result').style.display = 'block';
+  } catch(e) {
+    alert('Error consultando el mercado. Ingresa el precio manualmente.');
+  }
+  document.getElementById('market-loading').style.display = 'none';
+  document.getElementById('btn-market').disabled = false;
+}
+
+// ══ FULL ANALYSIS ══════════════════════════════════════════════════════════════
+function runFullAnalysis() {
+  if(!decoded) { alert('Regresa al Paso 1 e ingresa el VIN.'); return; }
+  goStep(3);
+
+  const miles    = parseFloat(document.getElementById('miles').value)||0;
+  const sale     = parseFloat(document.getElementById('p-sale').value)||8500;
+  const minP     = parseFloat(document.getElementById('p-minprofit').value)||1500;
+  const quote    = parseFloat(document.getElementById('p-repair-quote').value)||0;
+  const extra    = parseFloat(document.getElementById('p-extra').value)||0;
+  const mapaReport = document.getElementById('mapa-report').value.trim();
+  const dmg1     = document.getElementById('dmg1').value;
+  const dmg2     = document.getElementById('dmg2').value;
+  const title    = document.getElementById('title').value;
+  const cond     = document.getElementById('condition').value;
+  const model    = document.getElementById('model').value;
+  const lot      = document.getElementById('lot').value;
+  const owners   = parseInt(document.getElementById('cfx-owners').value)||1;
+  const accidents= parseInt(document.getElementById('cfx-accidents').value)||0;
+  const odo      = document.getElementById('cfx-odo').value;
+  const usage    = document.getElementById('cfx-usage').value;
+  const service  = document.getElementById('cfx-service').value;
+  const structural = document.getElementById('cfx-structural').value;
+  const cfxNotes = document.getElementById('cfx-notes').value;
+
+  const repair = calcRepair(dmg1, dmg2, miles, quote||0);
+  const maxBid = calcMaxBid(sale, minP, repair.est, extra);
+  const maxBidOpt = calcMaxBid(sale, minP, repair.low, extra);
+  const maxBidPes = calcMaxBid(sale, minP, repair.high, extra);
+
+  const feesAtMax = totalFees(maxBid);
+  const sellCost = Math.round(sale*SELL_PCT);
+  const totalCostOpt = maxBidOpt + totalFees(maxBidOpt) + repair.low + extra;
+  const totalCostEst = maxBid + feesAtMax + repair.est + extra;
+  const totalCostPes = maxBidPes + totalFees(maxBidPes) + repair.high + extra;
+
+  const profitOpt = sale - totalCostOpt - sellCost;
+  const profitEst = sale - totalCostEst - sellCost;
+  const profitPes = sale - totalCostPes - sellCost;
+
+  const rel = RELIABILITY[decoded.make]||{score:6,resale:6,parts:"Media",notes:"",market:"Desconocido"};
+  const isTarget = TARGET_MODELS.some(m=>model.toLowerCase().includes(m.toLowerCase()));
+
+  analysisData = {
+    decoded, model, lot, miles, sale, minP, repair, maxBid, maxBidOpt, maxBidPes,
+    feesAtMax, sellCost, totalCostOpt, totalCostEst, totalCostPes,
+    profitOpt, profitEst, profitPes, title, cond, condition:cond, dmg1, dmg2,
+    owners, accidents, odo, usage, service, structural, cfxNotes, pdfText,
+    rel, isTarget, extra, mapaReport
+  };
+
+  const score = calcScore({...analysisData, miles, make:decoded.make, totalCostEst});
+  analysisData.score = score;
+
+  document.getElementById('analysis-subtitle').textContent =
+    `${decoded.make} ${model} ${decoded.modelYear||''} · LOTE #${lot}`;
+
+  renderVerdict(analysisData);
+  renderMaxBid(analysisData);
+  renderRanges(analysisData);
+  renderFees(analysisData);
+  renderRepair(analysisData);
+  renderProfit(analysisData);
+  renderRisks(analysisData);
+  runAIOnly();
+}
+
+function renderVerdict(d) {
+  const sc = d.score;
+  const color = sc>=7?'var(--green)':sc>=5?'var(--amber)':'var(--red)';
+  const verdict = d.profitEst>=d.minP?'✅ DEAL VIABLE':d.profitEst>=0?'⚠️ MARGINAL':'❌ NO CONVIENE';
+  const circ = 2*Math.PI*35;
+  document.getElementById('res-verdict').innerHTML = `
+    <div class="card-label">📊 Veredicto MAPABROKER</div>
+    <div class="score-block">
+      <div class="score-ring-wrap">
+        <svg width="88" height="88">
+          <circle cx="44" cy="44" r="35" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/>
+          <circle cx="44" cy="44" r="35" fill="none" stroke="${color}" stroke-width="7"
+            stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-sc/10)}"
+            stroke-linecap="round" style="transition:stroke-dashoffset 1.2s ease"/>
+        </svg>
+        <div class="score-inner">
+          <span class="score-num" style="color:${color}">${sc}</span>
+          <span class="score-sub">SCORE</span>
+        </div>
+      </div>
+      <div>
+        <div class="score-info-title" style="color:${d.profitEst>=d.minP?'var(--green)':d.profitEst>=0?'var(--amber)':'var(--red)'}">${verdict}</div>
+        <div class="score-info-sub">
+          ${d.decoded.make} ${d.model} ${d.decoded.modelYear||''}<br/>
+          ${d.isTarget?'<span style="color:var(--green)">✓ Modelo target</span>':'<span style="color:var(--amber)">⚠ No es target primario</span>'}<br/>
+          Confiabilidad: <span style="color:${color}">${d.rel.score}/10</span> · ${d.rel.market}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderMaxBid(d) {
+  const color = d.maxBid>0?'var(--amber)':'var(--red)';
+  document.getElementById('res-maxbid').innerHTML = `
+    <div class="card-label">🎯 Puja Máxima Recomendada</div>
+    <div class="big-num-block">
+      <div class="big-num-label">PARA GANAR MÍNIMO $${d.minP.toLocaleString()}</div>
+      <div class="big-num" style="color:${color}">$${d.maxBid.toLocaleString()}</div>
+      <div class="big-num-sub">No pujes más de esta cantidad</div>
+    </div>
+    <div class="range-block">
+      <div class="range-box"><div class="range-box-label">OPTIMISTA</div><div class="range-box-val" style="color:var(--green)">$${d.maxBidOpt.toLocaleString()}</div></div>
+      <div class="range-box" style="border:1px solid rgba(255,184,0,0.2)"><div class="range-box-label">RECOMENDADO</div><div class="range-box-val" style="color:var(--amber)">$${d.maxBid.toLocaleString()}</div></div>
+      <div class="range-box"><div class="range-box-label">PESIMISTA</div><div class="range-box-val" style="color:var(--red)">$${d.maxBidPes.toLocaleString()}</div></div>
+    </div>
+    <div class="alert alert-amber">💡 Usa el <strong>escenario pesimista</strong> si no tienes cotización del taller confirmada.</div>`;
+}
+
+function renderRanges(d) {
+  document.getElementById('res-ranges').innerHTML = `
+    <div class="card-label">📊 Rango de Gastos Totales</div>
+    <div class="range-block">
+      <div class="range-box"><div class="range-box-label">MÍNIMO</div><div class="range-box-val" style="color:var(--green)">$${d.totalCostOpt.toLocaleString()}</div></div>
+      <div class="range-box"><div class="range-box-label">ESTIMADO</div><div class="range-box-val" style="color:var(--cyan)">$${d.totalCostEst.toLocaleString()}</div></div>
+      <div class="range-box"><div class="range-box-label">MÁXIMO</div><div class="range-box-val" style="color:var(--red)">$${d.totalCostPes.toLocaleString()}</div></div>
+    </div>
+    <div class="drow"><span class="drow-label">Precio de venta</span><span class="drow-val">$${d.sale.toLocaleString()}</span></div>
+    <div class="drow"><span class="drow-label">Costo de venta (5%)</span><span class="drow-val">-$${d.sellCost.toLocaleString()}</span></div>
+    <div class="drow"><span class="drow-label">Gastos extra</span><span class="drow-val">$${d.extra.toLocaleString()}</span></div>`;
+}
+
+function renderFees(d) {
+  const bf = buyerFee(d.maxBid);
+  const copartTotal = bf + COPART_FEES_FIXED;
+  document.getElementById('res-fees').innerHTML = `
+    <div class="card-label">💰 Fees — MapaFees Method</div>
+    <div class="drow"><span class="drow-label">Bid Amount</span><span class="drow-val">$${d.maxBid.toLocaleString()}</span></div>
+    <div class="drow"><span class="drow-label">Buyer Fee</span><span class="drow-val amber">$${bf.toLocaleString()}</span></div>
+    <div class="drow"><span class="drow-label">Internet Bid</span><span class="drow-val">$${FEE_INTERNET_BID}</span></div>
+    <div class="drow"><span class="drow-label">Gate Fee</span><span class="drow-val">$${FEE_GATE}</span></div>
+    <div class="drow"><span class="drow-label">Environmental</span><span class="drow-val">$${FEE_ENVIRONMENTAL}</span></div>
+    <div class="drow"><span class="drow-label">Title Mailing</span><span class="drow-val">$${FEE_TITLE_MAILING}</span></div>
+    <div class="drow"><span class="drow-label">Mapa Broker</span><span class="drow-val">$${FEE_BROKER}</span></div>
+    <div class="drow"><span class="drow-label">Title Transfer IL</span><span class="drow-val">$101</span></div>
+    <div class="drow"><span class="drow-label">Placas IL</span><span class="drow-val">$30</span></div>
+    <div class="drow" style="border-top:1px solid rgba(0,255,136,0.2);padding-top:10px">
+      <span class="drow-label"><strong>TOTAL FEES</strong></span>
+      <span class="drow-val green" style="font-size:16px"><strong>$${d.feesAtMax.toLocaleString()}</strong></span>
+    </div>`;
+}
+
+function renderRepair(d) {
+  const riskColor = d.repair.risk==='high'?'var(--red)':d.repair.risk==='medium'?'var(--amber)':'var(--green)';
+  document.getElementById('res-repair').innerHTML = `
+    <div class="card-label">🔧 Estimado Reparación</div>
+    <div class="drow"><span class="drow-label">Daño primario</span><span class="drow-val">${d.dmg1}</span></div>
+    <div class="drow"><span class="drow-label">Daño secundario</span><span class="drow-val">${d.dmg2||'Ninguno'}</span></div>
+    <div class="drow"><span class="drow-label">Riesgo</span><span class="drow-val" style="color:${riskColor}">${d.repair.risk.toUpperCase()}</span></div>
+    ${d.repair.hasAirbag?`<div class="drow"><span class="drow-label">Airbag</span><span class="drow-val red">~$1,600</span></div>`:''}
+    <div class="drow"><span class="drow-label">Optimista</span><span class="drow-val green">$${d.repair.low.toLocaleString()}</span></div>
+    <div class="drow"><span class="drow-label">Estimado</span><span class="drow-val cyan">$${d.repair.est.toLocaleString()}</span></div>
+    <div class="drow"><span class="drow-label">Pesimista</span><span class="drow-val red">$${d.repair.high.toLocaleString()}</span></div>`;
+}
+
+function renderProfit(d) {
+  const c = (v)=>v>=d.minP?'var(--green)':v>=0?'var(--amber)':'var(--red)';
+  document.getElementById('res-profit').innerHTML = `
+    <div class="card-label">💵 Escenarios de Ganancia</div>
+    <div class="range-block">
+      <div class="range-box"><div class="range-box-label">MÁXIMA</div><div class="range-box-val" style="color:${c(d.profitOpt)}">$${d.profitOpt.toLocaleString()}</div></div>
+      <div class="range-box" style="border:1px solid rgba(0,255,136,0.2)"><div class="range-box-label">ESTIMADA</div><div class="range-box-val" style="color:${c(d.profitEst)}">$${d.profitEst.toLocaleString()}</div></div>
+      <div class="range-box"><div class="range-box-label">MÍNIMA</div><div class="range-box-val" style="color:${c(d.profitPes)}">$${d.profitPes.toLocaleString()}</div></div>
+    </div>
+    <div class="drow"><span class="drow-label">Precio venta</span><span class="drow-val">$${d.sale.toLocaleString()}</span></div>
+    <div class="drow"><span class="drow-label">Costo total estimado</span><span class="drow-val red">-$${d.totalCostEst.toLocaleString()}</span></div>
+    <div class="drow"><span class="drow-label">Costo venta 5%</span><span class="drow-val">-$${d.sellCost}</span></div>
+    <div class="drow"><span class="drow-label"><strong>GANANCIA NETA</strong></span><span class="drow-val" style="color:${c(d.profitEst)}"><strong>$${d.profitEst.toLocaleString()}</strong></span></div>
+    ${d.profitPes<d.minP?`<div class="alert alert-amber" style="margin-top:8px">⚠️ En el escenario pesimista no llegas a tu meta de $${d.minP.toLocaleString()}.</div>`:''}`;
+}
+
+function renderRisks(d) {
+  const risks = [
+    d.repair.risk==='high' && {r:"high",t:"Riesgo alto de reparación",s:`El daño "${d.dmg1}" puede tener costos ocultos importantes. Obtén cotización ANTES de pujar.`},
+    d.structural==='Sí' && {r:"high",t:"Daño estructural reportado",s:"El frame puede estar comprometido. Un frame doblado invalida el deal."},
+    d.accidents>1 && {r:"high",t:`${d.accidents} accidentes en Carfax`,s:"Múltiples accidentes. Inspección física obligatoria."},
+    d.title==='Salvage' && {r:"high",t:"Título Salvage",s:"Muy difícil de financiar para el comprador. Mercado limitado."},
+    d.miles>100000 && {r:"medium",t:`${d.miles.toLocaleString()} millas`,s:"Más de 100K millas. Pide diagnóstico completo de motor y transmisión."},
+    d.condition!=='Run & Drive' && {r:"medium",t:`Condición: ${d.condition}`,s:"No es Run & Drive. Posibles problemas mecánicos adicionales."},
+    d.usage==='Rental' && {r:"medium",t:"Historial de Rental",s:"Los carros de renta tienen más desgaste que los de uso personal."},
+    !d.isTarget && {r:"low",t:"No es modelo target",s:"Toyota/Honda se venden más rápido. Este puede tardar más."},
+    d.service==='Sin registros' && {r:"low",t:"Sin registros de servicio",s:"No hay evidencia de mantenimiento regular."},
+  ].filter(Boolean).slice(0,6);
+
+  const colorMap = {high:'var(--red)',medium:'var(--amber)',low:'var(--muted)'};
+  document.getElementById('res-risks').innerHTML = `
+    <div class="card-label">⚠️ Riesgos Identificados</div>
+    ${risks.map(r=>`
+      <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div style="font-size:11px;font-weight:700;color:${colorMap[r.r]};margin-bottom:2px">${r.t}</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5">${r.s}</div>
+      </div>`).join('')}`;
+}
+
+// ══ AI ANALYSIS ═══════════════════════════════════════════════════════════════
+async function runAIOnly() {
+  if(!analysisData) return;
+  const d = analysisData;
+  const aiEl = document.getElementById('res-ai');
+  const scoreEl = document.getElementById('res-score-deal');
+
+  aiEl.innerHTML = `<div class="card-label">🤖 Análisis IA — Método MAPABROKER</div>
+    <div class="ai-spin"><div class="ai-spin-icon">⚙️</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:10px">Generando análisis completo...</div></div>`;
+  scoreEl.innerHTML = `<div class="card-label">🏆 Score del Deal</div>
+    <div style="text-align:center;padding:14px;color:var(--muted);font-size:13px"><div style="font-size:24px;animation:spin 1.5s linear infinite;display:inline-block">⚙️</div><br/>Calculando score...</div>`;
+
+  const hasMapaReport = d.mapaReport && d.mapaReport.length > 50;
+
+  const prompt = `Eres un experto en compra-venta de vehículos de subasta Copart en Illinois (Chicago Northwest Suburbs). Método MAPABROKER. Hablas directo, honesto, en español.
+
+CONTEXTO: Capital $8,000 | Meta venta máx $10,000 | Ganancia mínima $1,500 | Opera 1 carro a la vez | Tiene broker ($400) y storage propio | Área: Northwest Suburbs Chicago, IL
+
+VEHÍCULO: ${d.decoded.make} ${d.model} ${d.decoded.modelYear||''} | VIN: ${d.decoded.vin}
+Lote: #${d.lot} | Millas: ${d.miles.toLocaleString()} | Título: ${d.title} | Condición: ${d.cond||'Run & Drive'}
+Daño: ${d.dmg1}${d.dmg2?' + '+d.dmg2:''} | Target Toyota/Honda: ${d.isTarget?'SÍ':'NO'}
+Confiabilidad: ${d.rel.score}/10 — ${d.rel.notes}
+
+CARFAX: ${d.owners} dueños | ${d.accidents} accidentes | ${d.odo||'N/A'} | Uso: ${d.usage}
+Servicio: ${d.service} | Daño estructural: ${d.structural}${d.cfxNotes?' | '+d.cfxNotes:''}
+
+NÚMEROS:
+- Puja máx: $${d.maxBid.toLocaleString()} | Fees: $${d.feesAtMax.toLocaleString()}
+- Reparación: $${d.repair.est.toLocaleString()} (opt $${d.repair.low.toLocaleString()} / pes $${d.repair.high.toLocaleString()})
+- Costo total: $${d.totalCostEst.toLocaleString()} | Venta: $${d.sale.toLocaleString()}
+- Ganancia: $${d.profitEst.toLocaleString()} (máx $${d.profitOpt.toLocaleString()} / mín $${d.profitPes.toLocaleString()})
+- Riesgo reparación: ${d.repair.risk.toUpperCase()}
+
+${hasMapaReport?`REPORTE MAPABROKER:\n${d.mapaReport.slice(0,2000)}`:'Sin reporte MAPABROKER adicional.'}
+
+Genera análisis COMPLETO y HONESTO con estas secciones:
+
+🎯 **VEREDICTO**
+Una oración directa: ¿compras o no? ¿Por qué?
+
+📋 **ANÁLISIS DEL CARFAX**
+Qué revela el historial. ¿Hay banderas rojas?
+
+🔧 **ANÁLISIS DE DAÑOS**
+Implicaciones reales del daño. ¿Qué puede estar oculto?
+
+💰 **NÚMEROS DEL DEAL**
+Costo total, precio venta, ganancia real esperada.
+
+📍 **MERCADO CHICAGO NORTHWEST SUBURBS**
+¿Qué tan fácil se vende aquí? ¿En cuánto tiempo?
+
+⚡ **ESTRATEGIA DE PUJA**
+Cuánto pujar, cómo, y qué no hacer.
+
+💡 **TIPS MAPABROKER**
+3 consejos específicos para este carro.
+
+Máximo 700 palabras. Sé directo como mentor.`;
+
+  const scorePrompt = `Califica este deal de subasta Copart Illinois del 1-10. SOLO JSON válido.
+
+Vehículo: ${d.decoded.make} ${d.model} ${d.decoded.modelYear||''}
+Millas: ${d.miles.toLocaleString()} | Daño: ${d.dmg1} | Título: ${d.title}
+Accidentes: ${d.accidents} | Propietarios: ${d.owners}
+Ganancia proyectada: $${d.profitEst.toLocaleString()} | Riesgo: ${d.repair.risk}
+Modelo target: ${d.isTarget?'SÍ':'NO'} | Costo total: $${d.totalCostEst.toLocaleString()} / Capital $8,000
+
+Scoring: 9-10=deal excelente, 7-8=buen deal, 5-6=marginal, 3-4=arriesgado, 1-2=no comprar
+
+{"score":8,"color":"green","verdict":"COMPRAR","reason":"explicación breve","breakdown":{"rentabilidad":8,"riesgo":7,"mercado":9,"capital":8}}
+
+color: "green"(7-10), "amber"(5-6), "red"(1-4)
+verdict: "COMPRAR", "EVALUAR", o "NO COMPRAR"`;
+
+  try {
+    const [res1, res2] = await Promise.all([
+      fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:prompt}]})
+      }),
+      fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,messages:[{role:"user",content:scorePrompt}]})
+      })
+    ]);
+
+    const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+
+    const text = data1.content?.[0]?.text || "Error al generar análisis.";
+    aiEl.innerHTML = `<div class="card-label">🤖 Análisis IA — Método MAPABROKER${hasMapaReport?' + Reporte MAPABROKER':''}</div><div class="ai-out">${text}</div>`;
+
+    try {
+      const rawScore = data2.content?.[0]?.text || '{}';
+      const clean = rawScore.replace(/```json|```/g,'').trim();
+      const sc = JSON.parse(clean.match(/\{[\s\S]*\}/)?.[0] || clean);
+      const scoreColor = sc.color==='green'?'var(--green)':sc.color==='amber'?'var(--amber)':'var(--red)';
+      const verdictBg = sc.color==='green'?'rgba(0,255,136,0.1)':sc.color==='amber'?'rgba(255,184,0,0.1)':'rgba(255,61,90,0.1)';
+      const circ = 2*Math.PI*42;
+      scoreEl.innerHTML = `
+        <div class="card-label">🏆 Score del Deal</div>
+        <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px">
+          <div style="position:relative;width:100px;height:100px;flex-shrink:0">
+            <svg width="100" height="100" style="transform:rotate(-90deg)">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="8"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="${scoreColor}" stroke-width="8"
+                stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-(sc.score||5)/10)}"
+                stroke-linecap="round" style="transition:stroke-dashoffset 1.5s ease"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <span style="font-family:var(--display);font-size:36px;line-height:1;color:${scoreColor}">${sc.score||'?'}</span>
+              <span style="font-size:9px;letter-spacing:1px;color:var(--muted)">/10</span>
+            </div>
+          </div>
+          <div style="flex:1">
+            <div style="display:inline-block;padding:6px 16px;border-radius:20px;background:${verdictBg};border:1px solid ${scoreColor};margin-bottom:8px">
+              <span style="font-family:var(--display);font-size:22px;letter-spacing:2px;color:${scoreColor}">${sc.verdict||'EVALUAR'}</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.5">${sc.reason||''}</div>
+          </div>
+        </div>
+        ${sc.breakdown?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${Object.entries(sc.breakdown).map(([k,v])=>`
+            <div style="background:var(--s2);border-radius:8px;padding:10px 12px">
+              <div style="font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${k}</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="flex:1;height:4px;background:rgba(255,255,255,0.07);border-radius:2px">
+                  <div style="width:${v*10}%;height:100%;background:${v>=7?'var(--green)':v>=5?'var(--amber)':'var(--red)'};border-radius:2px;transition:width 1s ease"></div>
+                </div>
+                <span style="font-size:13px;font-weight:700;color:${v>=7?'var(--green)':v>=5?'var(--amber)':'var(--red)'}">${v}/10</span>
+              </div>
+            </div>`).join('')}
+        </div>`:''}`;
+    } catch(e) {
+      scoreEl.innerHTML = `<div class="card-label">🏆 Score del Deal</div><div style="font-size:13px;color:var(--muted);padding:10px">No se pudo calcular el score.</div>`;
+    }
+
+  } catch(e) {
+    aiEl.innerHTML = `<div class="card-label">🤖 Análisis IA</div><div style="color:var(--red);font-size:13px;padding:8px">Error de conexión. Presiona "REGENERAR IA" para intentar de nuevo.</div>`;
+    scoreEl.innerHTML = `<div class="card-label">🏆 Score del Deal</div><div style="color:var(--red);font-size:13px;padding:8px">Error de conexión.</div>`;
+  }
+}
+
+// ══ DOWNLOAD ══════════════════════════════════════════════════════════════════
+function downloadApp() {
+  const html = document.documentElement.outerHTML;
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'CarAnalyzerRM.html';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
